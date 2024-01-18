@@ -1,4 +1,4 @@
-import {server} from "./server.js"
+import { server } from "./server.js"
 
 const form = document.querySelector("#form")
 const input = document.querySelector("#url")
@@ -15,36 +15,39 @@ form.addEventListener("submit", async (event) => {
     return (content.textContent =
       "Não é possível fazer download de Shorts no momento")
   }
-    if (videoURL.includes("youtube.com")) {
+  if (videoURL.includes("youtube.com")) {
+    const [_, params] = videoURL.split("=")
+    let [videoID] = params.split("&")
 
-      const [_, params] = videoURL.split("=")
-      let [videoID] = params.split("&")
+    console.log(params)
+    console.log(videoID)
 
-      console.log(params)
-      console.log(videoID)
+    content.textContent = "Obtendo o texto do áudio..."
+    const transcription = await server.get("/summary/" + videoID)
 
-      content.textContent = "Obtendo o texto do áudio..."
-      const transcription = await server.get("/summary/" + videoID)
-      content.textContent = transcription.data.result
+    content.textContent = transcription.data.result
+    const summary = await server.post("/summary", {
+      text: transcription.data.result,
+    })
 
-    } else if (videoURL.includes("youtu.be")) {
+    content.textContent = summary.data.result
+    content.classList.remove("placeholder")
+  } else if (videoURL.includes("youtu.be")) {
+    const [_, params] = videoURL.split(".be/")
+    let [videoID] = params.split("?")
 
-      const [_, params] = videoURL.split(".be/")
-      let [videoID] = params.split("?")
+    console.log(params)
+    console.log(videoID)
 
-      console.log(params)
-      console.log(videoID)
+    content.textContent = "Obtendo o texto do áudio..."
+    const transcription = await server.get("/summary/" + videoID)
 
-      content.textContent = "Obtendo o texto do áudio..."
+    content.textContent = "Realizando o resumo..."
+    const summary = await server.post("/summary", {
+      text: transcription.data.result,
+    })
 
-      const transcription = await server.get("/summary/" + videoID)
-
-      content.textContent = "Realizando o resumo..."
-
-      const summary = await server.post("/summary", {
-        text: transcription.data.result,
-      })
-      content.textContent = summary.data.result
-      content.classList.remove("placeholder")
-    }
-  })
+    content.textContent = summary.data.result
+    content.classList.remove("placeholder")
+  }
+})
